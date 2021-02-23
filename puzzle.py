@@ -5,11 +5,28 @@ import uasyncio
 
 led = Pin(25, Pin.OUT)
 keyOne = Pin(15, Pin.IN, Pin.PULL_DOWN)
+messagePin = Pin(16, Pin.OUT)
 
 def checkLockOne():
     if (keyOne.value() == 1):
         global STATE
         STATE += 1
+
+async def morseBlink(character, pin):
+    pin.on()
+    if (character == '-'):
+        await uasyncio.sleep(0.15)
+    else:
+        await uasyncio.sleep(0.05)
+    pin.off()
+
+async def blinkMorse(message, messagePin):
+    for letter in message:
+        if (letter != ' '):
+            print(letter)
+            uasyncio.run(morseBlink(letter, messagePin))
+        else:
+            uasyncio.sleep(0.15)
 
 async def stageBlink(blinks):
     for i in range(0, blinks):
@@ -19,9 +36,12 @@ async def stageBlink(blinks):
         await uasyncio.sleep(0.1)
     await uasyncio.sleep(1 - (0.1 * (blinks + 1)))
     
+async def stageOneClue():
+    uasyncio.run(blinkMorse('.--. ..- .-.. .-.. .-.-.- .--. .. -. .-.-.- .---- ..... .-.-.- .... .. --. ....', messagePin))
+
 async def stageOne():
     uasyncio.run(stageBlink(1))
-    #stageOneMessage()
+    uasyncio.run(stageOneClue())
     checkLockOne()
     
 async def stageTwo():
