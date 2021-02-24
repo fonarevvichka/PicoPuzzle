@@ -13,20 +13,25 @@ def checkLockOne():
         STATE += 1
 
 async def morseBlink(character, pin):
+    DOT_TIME = .15
+    DASH_TIME = 0.25
+    PAUSE_TIME = 0.1
+
     pin.on()
     if (character == '-'):
-        await uasyncio.sleep(0.15)
+        await uasyncio.sleep(DASH_TIME)
     else:
-        await uasyncio.sleep(0.05)
+        await uasyncio.sleep(DOT_TIME)
     pin.off()
+    await uasyncio.sleep(PAUSE_TIME)
 
-async def blinkMorse(message, messagePin):
+def blinkMorse(message, messagePin):
+    SPACE_TIME = 0.25
     for letter in message:
         if (letter != ' '):
-            print(letter)
-            uasyncio.run(morseBlink(letter, messagePin))
+            await uasyncio.create_task(morseBlink(letter, messagePin))
         else:
-            uasyncio.sleep(0.15)
+            await uasyncio.sleep(SPACE_TIME)
 
 async def stageBlink(blinks):
     for i in range(0, blinks):
@@ -37,22 +42,39 @@ async def stageBlink(blinks):
     await uasyncio.sleep(1 - (0.1 * (blinks + 1)))
     
 async def stageOneClue():
-    uasyncio.run(blinkMorse('.--. ..- .-.. .-.. .-.-.- .--. .. -. .-.-.- .---- ..... .-.-.- .... .. --. ....', messagePin))
+    global printingMessage
+    await blinkMorse('.--. ..- .-.. .-.. .-.-.- .--. .. -. .-.-.- .---- ..... .-.-.- .... .. --. ....', messagePin)
+    printingMessage = False
 
 async def stageOne():
-    uasyncio.run(stageBlink(1))
-    uasyncio.run(stageOneClue())
+    print('stage one')
+    global printingMessage
+    
+    blinkTask = uasyncio.create_task(stageBlink(1))
+    
+    if not printingMessage:
+        printingMessage = True
+        messageTask = uasyncio.create_task(stageOneClue())
+    
+    if STATE != 1:
+       messageTask.cancel()
+
     checkLockOne()
+    await blinkTask
     
 async def stageTwo():
+    print('stage two')
     uasyncio.run(stageBlink(2))
     
-def main():    
+def main():
     while True:
         if STATE == 1:
             uasyncio.run(stageOne())
         if STATE == 2:
             uasyncio.run(stageTwo())
+
 STATE = 1
-if __name__ == "__main__":
-    main()
+printingMessage = False
+uasyncio.run(main())
+
+
