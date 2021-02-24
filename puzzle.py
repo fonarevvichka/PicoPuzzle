@@ -61,7 +61,7 @@ async def stageBlink(blinks):
         await uasyncio.sleep(0.1)
         led.off()
         await uasyncio.sleep(0.1)
-    await uasyncio.sleep(1 - (0.1 * (blinks + 1)))
+    await uasyncio.sleep(1 - (2 *(0.1 * (blinks))))
 
 
 async def stageOneClue():
@@ -128,6 +128,10 @@ async def stageTwo():
 
 async def stageThree():
     blinkTask = uasyncio.create_task(stageBlink(3))
+    await blinkTask
+
+async def solvedState():
+    blinkTask = uasyncio.create_task(stageBlink(5))
     await blinkTask
 
 def main():
