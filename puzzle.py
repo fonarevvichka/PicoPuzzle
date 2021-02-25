@@ -1,4 +1,4 @@
-from machine import Pin
+from machine import Pin, ADC
 import time
 import uasyncio
 
@@ -10,6 +10,8 @@ clueTwoPin = Pin(16, Pin.OUT)
 keysTwo = [Pin(0, Pin.IN, Pin.PULL_UP), Pin(2, Pin.IN, Pin.PULL_UP), Pin(4, Pin.IN, Pin.PULL_UP), \
            Pin(6, Pin.IN, Pin.PULL_UP), Pin(8, Pin.IN, Pin.PULL_UP), Pin(10, Pin.IN, Pin.PULL_UP)]
 
+adcPin = Pin(26, Pin.IN, Pin.PULL_DOWN)
+adcPin = ADC(0)
 
 def checkLockOne():
     global printingMessage
@@ -20,15 +22,28 @@ def checkLockOne():
         messageTask.cancel()
 
 async def checkLockTwo():
-    counter = 0
     for pin in keysTwo:
-        counter += 0
         if pin.value():
             return
 
     global STATE
     STATE += 1
     messageTask.cancel()
+
+async def checkLockThree():
+    print(adcPin.read_u16())
+    # currPin = 
+    # global STATE
+    # STATE += 1
+    # messageTask.cancel()
+
+async def blinkReset(pin):
+    # indicate reset
+    for i in range(0, 10):
+        pin.on()
+        await uasyncio.sleep(0.05)
+        pin.off()
+        await uasyncio.sleep(0.05)
 
 
 async def morseBlink(character, pin):
@@ -45,13 +60,27 @@ async def morseBlink(character, pin):
     await uasyncio.sleep(PAUSE_TIME)
 
 
-def blinkMorse(message, clueOnePin):
+def blinkMorse(message, pin):
     SPACE_TIME = 0.25
     for letter in message:
         if (letter != ' '):
-            await uasyncio.create_task(morseBlink(letter, clueOnePin))
+            await uasyncio.create_task(morseBlink(letter, pin))
         else:
             await uasyncio.sleep(SPACE_TIME)
+    await blinkReset(pin)
+
+
+async def sendBinaryMessage(message, pin):
+    for character in message:
+        if character == '0':
+            pin.off()
+            await uasyncio.sleep(0.25)
+        else:
+            pin.on()
+            await uasyncio.sleep(0.25)
+
+    await uasyncio.sleep(0.25)
+    await blinkReset(pin)
 
 
 async def stageBlink(blinks):
@@ -65,6 +94,7 @@ async def stageBlink(blinks):
 
 async def stageOneClue():
     global printingMessage
+    #  pull pin 15 high
     await blinkMorse('.--. ..- .-.. .-.. .-.-.- .--. .. -. .-.-.- .---- ..... .-.-.- .... .. --. ....', clueOnePin)
     printingMessage = False
 
@@ -72,6 +102,13 @@ async def stageOneClue():
 async def stageTwoClue():
     global printingMessage
     await sendBinaryMessage('00101101', clueTwoPin)
+    printingMessage = False
+
+
+async def stageThreeClue():
+    global printingMessage
+    #  i.want.about.2.5v.at.adc.0
+    await blinkMorse('.. .-.-.- .-- .- -. - .-.-.- .- -... --- ..- - .-.-.- ..--- .-.-.- ..... ...- .-.-.- .- - .-.-.- .- -.. -.-. .-.-.- -----', clueOnePin)
     printingMessage = False
 
 
@@ -89,27 +126,6 @@ async def stageOne():
     await blinkTask
 
 
-async def sendBinaryMessage(message, pin):
-    for character in message:
-        if character == '0':
-            pin.off()
-            await uasyncio.sleep(0.25)
-        else:
-            pin.on()
-            await uasyncio.sleep(0.25)
-
-    await uasyncio.sleep(0.25)
-
-    # indicate reset
-    for i in range(0, 10):
-        pin.on()
-        await uasyncio.sleep(0.05)
-        pin.off()
-        await uasyncio.sleep(0.05)
-    
-    await uasyncio.sleep(1)
-
-
 async def stageTwo():
     global printingMessage
     print('I may be xored but an even pin holds the key')
@@ -125,10 +141,18 @@ async def stageTwo():
 
 
 async def stageThree():
+    global printingMessage
     blinkTask = uasyncio.create_task(stageBlink(3))
+
+    if not printingMessage:
+        printingMessage = True
+        messageTask = uasyncio.create_task(stageThreeClue())
+
+    uasyncio.create_task(checkLockThree())
+
     await blinkTask
 
-async def solvedState():
+async def stageSolved():
     blinkTask = uasyncio.create_task(stageBlink(5))
     await blinkTask
 
@@ -141,7 +165,7 @@ def main():
         if STATE == 3:
             uasyncio.run(stageThree())
         if STATE == 4:
-            #completed stage
+            uasyncio.run(stageSolved())
             print('good job')
 
 STATE = 1
