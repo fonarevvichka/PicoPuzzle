@@ -21,6 +21,7 @@ def checkLockOne():
         printingMessage = False
         messageTask.cancel()
 
+
 async def checkLockTwo():
     for pin in keysTwo:
         if pin.value():
@@ -30,13 +31,16 @@ async def checkLockTwo():
     STATE += 1
     messageTask.cancel()
 
+
 async def checkLockThree():
+    #  ~100ohs and ~330ohms 
     voltage = adcPin.read_u16() / 65335
     print(voltage)
     if voltage > (0.6) and voltage < (0.8):
         global STATE
         STATE += 1
         messageTask.cancel()
+
 
 async def blinkReset(pin):
     # indicate reset
@@ -155,6 +159,8 @@ async def stageThree():
 
 async def stageSolved():
     blinkTask = uasyncio.create_task(stageBlink(5))
+    #  sha256 hash of 'Vichka Fonarev'
+    print('5751e640289d15714dbe16b9d3fc1b5116c6629d18e7b37c45cc1d9a36802833')
     await blinkTask
 
 def main():
@@ -167,7 +173,6 @@ def main():
             uasyncio.run(stageThree())
         if STATE == 4:
             uasyncio.run(stageSolved())
-            print('good job')
 
 STATE = 1
 printingMessage = False
