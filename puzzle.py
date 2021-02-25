@@ -35,7 +35,7 @@ async def checkLockTwo():
 async def checkLockThree():
     #  ~100ohs and ~330ohms 
     voltage = adcPin.read_u16() / 65335
-    print(voltage)
+
     if voltage > (0.6) and voltage < (0.8):
         global STATE
         STATE += 1
