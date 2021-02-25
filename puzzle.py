@@ -31,11 +31,12 @@ async def checkLockTwo():
     messageTask.cancel()
 
 async def checkLockThree():
-    print(adcPin.read_u16())
-    # currPin = 
-    # global STATE
-    # STATE += 1
-    # messageTask.cancel()
+    voltage = adcPin.read_u16() / 65335
+    print(voltage)
+    if voltage > (0.6) and voltage < (0.8):
+        global STATE
+        STATE += 1
+        messageTask.cancel()
 
 async def blinkReset(pin):
     # indicate reset
