@@ -23,7 +23,6 @@ async def checkLockTwo():
     counter = 0
     for pin in keysTwo:
         counter += 0
-        print(pin.value())
         if pin.value():
             return
 
@@ -74,7 +73,6 @@ async def stageTwoClue():
     global printingMessage
     await sendBinaryMessage('00101101', clueTwoPin)
     printingMessage = False
-
 
 
 async def stageOne():
