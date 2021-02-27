@@ -160,7 +160,7 @@ async def stageThree():
 async def stageSolved():
     blinkTask = uasyncio.create_task(stageBlink(5))
     #  sha256 hash of 'Vichka Fonarev'
-    print('5751e640289d15714dbe16b9d3fc1b5116c6629d18e7b37c45cc1d9a36802833')
+    print('PUZZLE SOLVED! Secret key: 5751e640289d15714dbe16b9d3fc1b5116c6629d18e7b37c45cc1d9a36802833')
     await blinkTask
 
 def main():
